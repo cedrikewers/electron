@@ -2952,7 +2952,7 @@ describe('BrowserWindow module', () => {
     });
   });
 
-  ifdescribe(['win32', 'darwin'].includes(process.platform))('"titleBarStyle" option', () => {
+  describe('"titleBarStyle" option', () => {
     const testWindowsOverlay = async (style: any) => {
       const w = new BrowserWindow({
         show: false,
@@ -2991,10 +2991,12 @@ describe('BrowserWindow module', () => {
       const [, newOverlayRect] = await geometryChange;
       expect(newOverlayRect.width).to.equal(overlayRect.width + 400);
     };
+
     afterEach(async () => {
       await closeAllWindows();
       ipcMain.removeAllListeners('geometrychange');
     });
+
     it('creates browser window with hidden title bar', () => {
       const w = new BrowserWindow({
         show: false,
@@ -3005,6 +3007,7 @@ describe('BrowserWindow module', () => {
       const contentSize = w.getContentSize();
       expect(contentSize).to.deep.equal([400, 400]);
     });
+
     ifit(process.platform === 'darwin')('creates browser window with hidden inset title bar', () => {
       const w = new BrowserWindow({
         show: false,
@@ -3015,14 +3018,16 @@ describe('BrowserWindow module', () => {
       const contentSize = w.getContentSize();
       expect(contentSize).to.deep.equal([400, 400]);
     });
+
     it('sets Window Control Overlay with hidden title bar', async () => {
       await testWindowsOverlay('hidden');
     });
+
     ifit(process.platform === 'darwin')('sets Window Control Overlay with hidden inset title bar', async () => {
       await testWindowsOverlay('hiddenInset');
     });
 
-    ifdescribe(process.platform === 'win32')('when an invalid titleBarStyle is initially set', () => {
+    ifdescribe(process.platform !== 'darwin')('when an invalid titleBarStyle is initially set', () => {
       let w: BrowserWindow;
 
       beforeEach(() => {
@@ -3058,7 +3063,7 @@ describe('BrowserWindow module', () => {
     });
   });
 
-  ifdescribe(['win32', 'darwin'].includes(process.platform))('"titleBarOverlay" option', () => {
+  describe('"titleBarOverlay" option', () => {
     const testWindowsOverlayHeight = async (size: any) => {
       const w = new BrowserWindow({
         show: false,
@@ -3073,6 +3078,7 @@ describe('BrowserWindow module', () => {
           height: size
         }
       });
+
       const overlayHTML = path.join(__dirname, 'fixtures', 'pages', 'overlay.html');
       if (process.platform === 'darwin') {
         await w.loadFile(overlayHTML);
@@ -3081,6 +3087,7 @@ describe('BrowserWindow module', () => {
         await w.loadFile(overlayHTML);
         await overlayReady;
       }
+
       const overlayEnabled = await w.webContents.executeJavaScript('navigator.windowControlsOverlay.visible');
       expect(overlayEnabled).to.be.true('overlayEnabled');
       const overlayRectPreMax = await w.webContents.executeJavaScript('getJSOverlayProperties()');
@@ -3107,16 +3114,18 @@ describe('BrowserWindow module', () => {
       // Confirm that maximization only affected the height of the buttons and not the title bar
       expect(overlayRectPostMax.height).to.equal(size);
     };
+
     afterEach(async () => {
       await closeAllWindows();
       ipcMain.removeAllListeners('geometrychange');
     });
+
     it('sets Window Control Overlay with title bar height of 40', async () => {
       await testWindowsOverlayHeight(40);
     });
   });
 
-  ifdescribe(process.platform === 'win32')('BrowserWindow.setTitlebarOverlay', () => {
+  ifdescribe(process.platform !== 'darwin')('BrowserWindow.setTitlebarOverlay', () => {
     afterEach(async () => {
       await closeAllWindows();
       ipcMain.removeAllListeners('geometrychange');
