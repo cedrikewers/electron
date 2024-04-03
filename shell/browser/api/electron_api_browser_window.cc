@@ -29,6 +29,8 @@
 
 #if BUILDFLAG(IS_WIN)
 #include "shell/browser/ui/views/win_frame_view.h"
+#elif BUILDFLAG(IS_LINUX)
+#include "shell/browser/ui/views/opaque_frame_view.h"
 #endif
 
 namespace electron::api {
@@ -303,7 +305,7 @@ v8::Local<v8::Value> BrowserWindow::GetWebContents(v8::Isolate* isolate) {
   return v8::Local<v8::Value>::New(isolate, web_contents_);
 }
 
-#if BUILDFLAG(IS_WIN)
+#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_LINUX)
 void BrowserWindow::SetTitleBarOverlay(const gin_helper::Dictionary& options,
                                        gin_helper::Arguments* args) {
   // Ensure WCO is already enabled on this window
@@ -352,13 +354,20 @@ void BrowserWindow::SetTitleBarOverlay(const gin_helper::Dictionary& options,
     updated = true;
   }
 
-  // If anything was updated, invalidate the layout and schedule a paint of the
-  // window's frame view
-  if (updated) {
-    auto* frame_view = static_cast<WinFrameView*>(
-        window->widget()->non_client_view()->frame_view());
-    frame_view->InvalidateCaptionButtons();
-  }
+  if (!updated)
+    return;
+
+    // If anything was updated, ensure the overlay is repainted.
+#if BUILDFLAG(IS_WIN)
+  auto* frame_view = static_cast<WinFrameView*>(
+      window->widget()->non_client_view()->frame_view());
+  frame_view->InvalidateCaptionButtons();
+#else
+  auto* frame_view = static_cast<OpaqueFrameView*>(
+      window->widget()->non_client_view()->frame_view());
+  frame_view->UpdateCaptionButtonPlaceholderContainerBackground();
+  frame_view->LayoutWindowControlsOverlay();
+#endif
 }
 #endif
 
@@ -419,7 +428,7 @@ void BrowserWindow::BuildPrototype(v8::Isolate* isolate,
       .SetMethod("focusOnWebView", &BrowserWindow::FocusOnWebView)
       .SetMethod("blurWebView", &BrowserWindow::BlurWebView)
       .SetMethod("isWebViewFocused", &BrowserWindow::IsWebViewFocused)
-#if BUILDFLAG(IS_WIN)
+#if BUILDFLAG(IS_WIN) || BUILDFLAG(IS_LINUX)
       .SetMethod("setTitleBarOverlay", &BrowserWindow::SetTitleBarOverlay)
 #endif
       .SetProperty("webContents", &BrowserWindow::GetWebContents);
