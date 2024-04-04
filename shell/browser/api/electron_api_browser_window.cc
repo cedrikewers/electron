@@ -309,7 +309,7 @@ v8::Local<v8::Value> BrowserWindow::GetWebContents(v8::Isolate* isolate) {
 void BrowserWindow::SetTitleBarOverlay(const gin_helper::Dictionary& options,
                                        gin_helper::Arguments* args) {
   // Ensure WCO is already enabled on this window
-  if (!window_->titlebar_overlay_enabled()) {
+  if (!window_->IsWindowControlsOverlayEnabled()) {
     args->ThrowError("Titlebar overlay is not enabled");
     return;
   }
@@ -332,40 +332,31 @@ void BrowserWindow::SetTitleBarOverlay(const gin_helper::Dictionary& options,
     updated = true;
   }
 
-  // Check and update the symbol color
+  // Check and update the symbol color.
   std::string symbol_color;
   if (options.Get(options::kOverlaySymbolColor, &symbol_color)) {
-    // Parse the string as a CSS color
+    // Parse the string as a CSS color.
     SkColor color;
     if (!content::ParseCssColorString(symbol_color, &color)) {
       args->ThrowError("Could not parse symbol color as CSS color");
       return;
     }
-
-    // Update the view
     window->set_overlay_symbol_color(color);
     updated = true;
   }
 
-  // Check and update the height
+  // Check and update the height.
   int height = 0;
   if (options.Get(options::kOverlayHeight, &height)) {
     window->set_titlebar_overlay_height(height);
     updated = true;
   }
 
-  if (!updated)
-    return;
-
-    // If anything was updated, ensure the overlay is repainted.
-#if BUILDFLAG(IS_WIN)
-  auto* frame_view = static_cast<WinFrameView*>(
-      window->widget()->non_client_view()->frame_view());
-#else
-  auto* frame_view = static_cast<OpaqueFrameView*>(
-      window->widget()->non_client_view()->frame_view());
-#endif
-  frame_view->InvalidateCaptionButtons();
+  if (updated) {
+    auto* frame_view = static_cast<FramelessView*>(
+        window->widget()->non_client_view()->frame_view());
+    frame_view->InvalidateCaptionButtons();
+  }
 }
 #endif
 
